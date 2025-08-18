@@ -54,10 +54,7 @@ class RFPAnalysisRequest(BaseModel):
     company_profile: Optional[str] = None
 
 
-class AnalysisResponse(BaseModel):
-    status: str
-    analyze_proposal: str
-    error: Optional[str] = None
+
 
 
 class analyzePricingRequest(BaseModel):
@@ -66,10 +63,59 @@ class analyzePricingRequest(BaseModel):
     historical_data:Optional[str] = None
 
 
+class AnalysisResponse(BaseModel):
+    status: str
+    analyze_proposal: str
+    error: Optional[str] = None
 class analyzePricingResponse(BaseModel):
     status: str
     result: str
     error: Optional[str] = None
+
+class coastAnalysisResponse(BaseModel):
+    status: str
+    result: str
+    error: Optional[str] = None
+    
+    
+class coastAnalysisRequest(BaseModel):
+    proposal_text: str
+    ai_analysis_details: Optional[str] = None
+    
+
+class technicalAnalysisResponse(BaseModel):
+    status: str
+    result: str
+    error: Optional[str] = None
+    
+    
+class technicalAnalysisRequest(BaseModel):
+    proposal_text: str
+    ai_analysis_details: Optional[str] = None
+    
+class complianceAnalysisResponse(BaseModel):
+    status: str
+    result: str
+    error: Optional[str] = None
+    
+    
+class complianceAnalysisRequest(BaseModel):
+    proposal_text: str
+    ai_analysis_details: Optional[str] = None
+    
+    
+class summaryAnalysisResponse(BaseModel):
+    status: str
+    result: str
+    error: Optional[str] = None
+class summaryAnalysisRequest(BaseModel):
+    proposal_text: str
+    ai_analysis_details: str
+    component_analysis: Optional[str] 
+    price_analysis: Optional[str] 
+    cost_realism: Optional[str] 
+    technical_analysis: Optional[str] 
+    compliance_assessment: Optional[str] 
 
 
 
@@ -120,87 +166,80 @@ async def analyze_pricing_api(request: analyzePricingRequest):
         return analyzePricingResponse(status="error", result="", error=str(e))
 
 
-@app.post("/analyze/cost-realism", response_model=AnalysisResponse)
-async def analyze_cost_realism(request: AnalysisRequest):
+@app.post("/analyze/cost-realism", response_model=coastAnalysisResponse)
+async def analyze_cost_realism(request: coastAnalysisRequest):
     try:
-        component_analysis = gemini.analysis_proposal(request.proposal_text, request.extra_components)
-        result = gemini.analyze_cost_realism(request.proposal_text, component_analysis)
-        return AnalysisResponse(status="success", result=result)
+        result = await gemini.analyze_cost_realism(request.proposal_text, request.ai_analysis_details)
+        return coastAnalysisResponse(status="success", result=result)
     except Exception as e:
-        return AnalysisResponse(status="error", result="", error=str(e))
+        return coastAnalysisResponse(status="error", result="", error=str(e))
 
 
-@app.post("/analyze/technical", response_model=AnalysisResponse)
-async def technical_analysis(request: AnalysisRequest):
+@app.post("/analyze/technical", response_model= technicalAnalysisResponse)
+async def technical_analysis(request: technicalAnalysisRequest):
     try:
-        result = gemini.technical_analysis_review(request.proposal_text)
-        return AnalysisResponse(status="success", result=result)
+        result = await gemini.technical_analysis_review(request.proposal_text)
+        return technicalAnalysisResponse(status="success", result=result)
     except Exception as e:
-        return AnalysisResponse(status="error", result="", error=str(e))
+        return technicalAnalysisResponse(status="error", result="", error=str(e))
 
 
-@app.post("/analyze/compliance", response_model=AnalysisResponse)
-async def compliance_analysis(request: AnalysisRequest):
+@app.post("/analyze/compliance", response_model=complianceAnalysisResponse)
+async def compliance_analysis(request: complianceAnalysisRequest):
     try:
-        result = gemini.compliance_assessment(request.proposal_text)
-        return AnalysisResponse(status="success", result=result)
+        result = await  gemini.compliance_assessment(request.proposal_text)
+        return complianceAnalysisResponse(status="success", result=result)
     except Exception as e:
-        return AnalysisResponse(status="error", result="", error=str(e))
+        return complianceAnalysisResponse(status="error", result="", error=str(e))
 
 
-@app.post("/rfp/analyze", response_model=AnalysisResponse)
-async def analyze_rfp(request: RFPAnalysisRequest):
+
+
+@app.post("/generate/summary", response_model=summaryAnalysisResponse)
+async def generate_summary(request: summaryAnalysisRequest ):
     try:
-        result = gemini.analyze_rfp(request.rfp_text)
-        return AnalysisResponse(status="success", result=result)
-    except Exception as e:
-        return AnalysisResponse(status="error", result="", error=str(e))
-
-
-@app.post("/rfp/eligibility", response_model=AnalysisResponse)
-async def check_eligibility(request: RFPAnalysisRequest):
-    try:
-        if not request.company_profile:
-            raise HTTPException(status_code=400, detail="Company profile required")
-        result = gemini.analyze_eligibility(request.rfp_text, request.company_profile)
-        return AnalysisResponse(status="success", result=result)
-    except Exception as e:
-        return AnalysisResponse(status="error", result="", error=str(e))
-
-
-@app.post("/rfp/generate-proposal", response_model=AnalysisResponse)
-async def generate_proposal(request: RFPAnalysisRequest):
-    try:
-        if not request.company_profile:
-            raise HTTPException(status_code=400, detail="Company profile required")
-        result = gemini.generate_project_proposal(request.rfp_text, request.company_profile)
-        return AnalysisResponse(status="success", result=result)
-    except Exception as e:
-        return AnalysisResponse(status="error", result="", error=str(e))
-
-
-@app.post("/generate/summary", response_model=AnalysisResponse)
-async def generate_summary(
-    proposal_text: str = Form(...),
-    component_analysis: Optional[str] = Form(None),
-    price_analysis: Optional[str] = Form(None),
-    cost_realism: Optional[str] = Form(None),
-    technical_analysis: Optional[str] = Form(None),
-    compliance_assessment: Optional[str] = Form(None),
-):
-    try:
-        result = gemini.analysis_proposal_summary(
-            proposal_text,
-            component_analysis,
-            price_analysis,
-            cost_realism,
-            technical_analysis,
-            compliance_assessment,
+        result = await gemini.analysis_proposal_summary(
+            request.proposal_text,
+            request.ai_analysis_details,
+            request.price_analysis,
+            request.cost_realism,
+            request.technical_analysis,
+            request.compliance_assessment,
         )
-        return AnalysisResponse(status="success", result=result)
+        return summaryAnalysisResponse(status="success", result=result)
     except Exception as e:
-        return AnalysisResponse(status="error", result="", error=str(e))
+        return summaryAnalysisResponse(status="error", result="", error=str(e))
 
+
+# @app.post("/rfp/analyze", response_model=AnalysisResponse)
+# async def analyze_rfp(request: RFPAnalysisRequest):
+#     try:
+#         result = gemini.analyze_rfp(request.rfp_text)
+#         return AnalysisResponse(status="success", result=result)
+#     except Exception as e:
+#         return AnalysisResponse(status="error", result="", error=str(e))
+
+
+# @app.post("/rfp/eligibility", response_model=AnalysisResponse)
+# async def check_eligibility(request: RFPAnalysisRequest):
+#     try:
+#         if not request.company_profile:
+#             raise HTTPException(status_code=400, detail="Company profile required")
+#         result = gemini.analyze_eligibility(request.rfp_text, request.company_profile)
+#         return AnalysisResponse(status="success", result=result)
+#     except Exception as e:
+#         return AnalysisResponse(status="error", result="", error=str(e))
+
+
+# @app.post("/rfp/generate-proposal", response_model=AnalysisResponse)
+# async def generate_proposal(request: RFPAnalysisRequest):
+#     try:
+#         if not request.company_profile:
+#             raise HTTPException(status_code=400, detail="Company profile required")
+#         result = gemini.generate_project_proposal(request.rfp_text, request.company_profile)
+#         return AnalysisResponse(status="success", result=result)
+#     except Exception as e:
+#         return AnalysisResponse(status="error", result="", error=str(e))
 
 if __name__ == "__main__":
     import uvicorn

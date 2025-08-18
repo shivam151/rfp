@@ -1,7 +1,0 @@
-.env
-.rfp
-.imaenv
-__pycache__
-uploads
-backend/controllers/ai/model
-*.db

@@ -725,7 +725,7 @@ class GeminiClient:
 
 
         
-    def analyze_cost_realism(self, proposal_text, ai_analysis_details):
+    async def analyze_cost_realism(self, proposal_text, ai_analysis_details):
         """
         Implement FAR 15.404-1(d) Cost Realism Analysis
         """
@@ -817,7 +817,7 @@ class GeminiClient:
             return f"Error in cost realism analysis: {str(e)}"
 
 
-    def technical_analysis_review(self, proposal_text):
+    async def technical_analysis_review(self, proposal_text):
         """
         Perform comprehensive technical analysis and evaluation
         """
@@ -921,7 +921,7 @@ class GeminiClient:
             return f"Error in technical analysis: {str(e)}"
 
 
-    def compliance_assessment(self, proposal_text):
+    async def compliance_assessment(self, proposal_text):
         """
         Comprehensive compliance assessment against RFP requirements
         """
@@ -1040,7 +1040,7 @@ class GeminiClient:
 
 
 
-    def analysis_proposal_summary(self, proposal_text, ai_analysis_details, price_analysis=None, 
+    async def analysis_proposal_summary(self, proposal_text, ai_analysis_details, price_analysis=None, 
                                 cost_realism=None, technical_analysis=None, compliance_assessment=None):
         """
         Generate a comprehensive executive summary of the RFP proposal analysis combining all evaluation components

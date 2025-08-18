@@ -110,14 +110,12 @@ class summaryAnalysisResponse(BaseModel):
     error: Optional[str] = None
 class summaryAnalysisRequest(BaseModel):
     proposal_text: str
-    ai_analysis_details: str
+    ai_analysis_details: Optional[str] 
     component_analysis: Optional[str] 
     price_analysis: Optional[str] 
     cost_realism: Optional[str] 
     technical_analysis: Optional[str] 
     compliance_assessment: Optional[str] 
-
-
 
 # ---------- Routes ----------
 @app.get("/")

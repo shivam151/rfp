@@ -14,7 +14,6 @@ app = FastAPI(title="RFP Proposal Analyzer API", version="1.0.0")
 gemini = GeminiClient()
 
 
-# ---------- FILE PROCESSING ----------
 async def process_uploaded_file_Proposal(uploaded_file: UploadFile):
     """Process uploaded file and extract text using Gemini"""
     if uploaded_file is not None:
@@ -42,26 +41,49 @@ async def process_uploaded_file_Proposal(uploaded_file: UploadFile):
 
     return None
 
+async def process_uploaded_file(uploaded_file: UploadFile):
+    """Process uploaded file and extract text using Gemini"""
+    if uploaded_file is not None:
+        file_type = uploaded_file.content_type
+        file_name = uploaded_file.filename
+
+        try:
+            if file_type == "text/plain":
+                content = (await uploaded_file.read()).decode("utf-8")
+                await uploaded_file.seek(0) 
+                return content
+
+            elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                content = await gemini.extract_text_from_docx(uploaded_file)
+                return content if content else None
+
+            elif file_type == "application/pdf":
+                content = await gemini.extract_text_from_uploaded_pdf(uploaded_file)
+                return content if content else None
+
+            else:
+                return None
+
+        except Exception as e:
+            raise Exception(f"Error processing file {file_name}: {str(e)}")
+
+    return None
+
+
 
 # ---------- Pydantic Models ----------
 class AnalysisRequest(BaseModel):
     proposal_text: str
     extra_components: Optional[str] = None
 
-
 class RFPAnalysisRequest(BaseModel):
     rfp_text: str
     company_profile: Optional[str] = None
-
-
-
-
 
 class analyzePricingRequest(BaseModel):
     proposal_text:str
     ai_analysis_details: str
     historical_data:Optional[str] = None
-
 
 class AnalysisResponse(BaseModel):
     status: str
@@ -76,19 +98,13 @@ class coastAnalysisResponse(BaseModel):
     status: str
     result: str
     error: Optional[str] = None
-    
-    
 class coastAnalysisRequest(BaseModel):
     proposal_text: str
     ai_analysis_details: Optional[str] = None
-    
-
 class technicalAnalysisResponse(BaseModel):
     status: str
     result: str
     error: Optional[str] = None
-    
-    
 class technicalAnalysisRequest(BaseModel):
     proposal_text: str
     ai_analysis_details: Optional[str] = None
@@ -97,13 +113,10 @@ class complianceAnalysisResponse(BaseModel):
     status: str
     result: str
     error: Optional[str] = None
-    
-    
 class complianceAnalysisRequest(BaseModel):
     proposal_text: str
     ai_analysis_details: Optional[str] = None
-    
-    
+
 class summaryAnalysisResponse(BaseModel):
     status: str
     result: str
@@ -116,6 +129,44 @@ class summaryAnalysisRequest(BaseModel):
     cost_realism: Optional[str] 
     technical_analysis: Optional[str] 
     compliance_assessment: Optional[str] 
+    
+
+class analyzeEligibilityRequest(BaseModel):
+    rfp_text: str
+    company_profile: Optional[str] = None
+
+class analyzeEligibilityResponse(BaseModel):
+    status: str
+    result: str
+    error: Optional[str] = None
+    
+class RFPAnalysisResponse(BaseModel):
+    status: str
+    result: str
+    error: Optional[str] = None
+
+class GenerateProposalRequest(BaseModel):
+    rfp_text: str
+    company_profile: str
+
+class CompetitiveLandscapeRequest(BaseModel):
+    rfp_text: str
+    company_profile: str
+
+class ExecutiveBriefingRequest(BaseModel):
+    rfp_text: str
+    company_profile: str
+
+class InnovationOpportunitiesRequest(BaseModel):
+    rfp_text: str
+
+class ExtractRequirementsResponse(BaseModel):
+    status: str
+    result: str
+    error: Optional[str] = None
+
+class GenerateTasksRequest(BaseModel):
+    requirements: str
 
 # ---------- Routes ----------
 @app.get("/")
@@ -191,8 +242,6 @@ async def compliance_analysis(request: complianceAnalysisRequest):
         return complianceAnalysisResponse(status="error", result="", error=str(e))
 
 
-
-
 @app.post("/generate/summary", response_model=summaryAnalysisResponse)
 async def generate_summary(request: summaryAnalysisRequest ):
     try:
@@ -238,6 +287,97 @@ async def generate_summary(request: summaryAnalysisRequest ):
 #         return AnalysisResponse(status="success", result=result)
 #     except Exception as e:
 #         return AnalysisResponse(status="error", result="", error=str(e))
+
+
+
+@app.post("/upload/create/rfp")
+async def upload_create_rfp_file(file: UploadFile = File(...)):
+    """Upload and extract text from proposal file"""
+    try:
+        text = await process_uploaded_file(file)
+
+        if text is None:
+            raise HTTPException(status_code=400, detail="Failed to process the file")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "filename": file.filename,
+                "content_type": file.content_type,
+                "text": text,
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    
+@app.post("/rfp/analyze_eligibility", response_model=analyzeEligibilityResponse)
+async def compliance_analysis(request: analyzeEligibilityRequest):
+    try:
+        result = await  gemini.analyze_eligibility(request.rfp_text, request.company_profile)
+        return analyzeEligibilityResponse(status="success", result=result)
+    except Exception as e:
+        return analyzeEligibilityResponse(status="error", result="", error=str(e))
+
+
+
+@app.post("/rfp/generate-proposal", response_model=RFPAnalysisResponse)
+async def generate_proposal(request: GenerateProposalRequest):
+    try:
+        result = await gemini.generate_project_proposal(request.rfp_text, request.company_profile)
+        return RFPAnalysisResponse(status="success", result=result)
+    except Exception as e:
+        return RFPAnalysisResponse(status="error", result="", error=str(e))
+
+@app.post("/rfp/competitive-landscape", response_model=RFPAnalysisResponse)
+async def analyze_competitive_landscape(request: CompetitiveLandscapeRequest):
+    try:
+        result = await gemini.analyze_competitive_landscape(request.rfp_text, request.company_profile)
+        return RFPAnalysisResponse(status="success", result=result)
+    except Exception as e:
+        return RFPAnalysisResponse(status="error", result="", error=str(e))
+
+@app.post("/rfp/executive-briefing", response_model=RFPAnalysisResponse)
+async def generate_executive_briefing(request: ExecutiveBriefingRequest):
+    try:
+        result = await gemini.generate_executive_briefing(request.rfp_text, request.company_profile)
+        return RFPAnalysisResponse(status="success", result=result)
+    except Exception as e:
+        return RFPAnalysisResponse(status="error", result="", error=str(e))
+
+@app.post("/rfp/innovation-opportunities", response_model=RFPAnalysisResponse)
+async def assess_innovation_opportunities(request: InnovationOpportunitiesRequest):
+    try:
+        result = await gemini.assess_innovation_opportunities(request.rfp_text)
+        return RFPAnalysisResponse(status="success", result=result)
+    except Exception as e:
+        return RFPAnalysisResponse(status="error", result="", error=str(e))
+    
+@app.post("/rfp/analyze", response_model=RFPAnalysisResponse)
+async def analyze_rfp(request: RFPAnalysisRequest):
+    try:
+        result = await gemini.analyze_rfp(request.rfp_text)
+        return RFPAnalysisResponse(status="success", result=result)
+    except Exception as e:
+        return RFPAnalysisResponse(status="error", result="", error=str(e))
+
+@app.post("/rfp/extract-requirements", response_model=ExtractRequirementsResponse)
+async def extract_requirements(request: RFPAnalysisRequest):
+    try:
+        result = await gemini.extract_requirements(request.rfp_text)
+        return ExtractRequirementsResponse(status="success", result=result)
+    except Exception as e:
+        return ExtractRequirementsResponse(status="error", result="", error=str(e))
+
+@app.post("/rfp/generate-tasks", response_model=ExtractRequirementsResponse)
+async def generate_tasks(request: GenerateTasksRequest):
+    try:
+        result = await gemini.generate_tasks(request.requirements)
+        return ExtractRequirementsResponse(status="success", result=result)
+    except Exception as e:
+        return ExtractRequirementsResponse(status="error", result="", error=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -10,7 +10,6 @@ load_dotenv()
 
 app = FastAPI(title="RFP Proposal Analyzer API", version="1.0.0")
 
-# Initialize Gemini client
 gemini = GeminiClient()
 
 
@@ -256,38 +255,6 @@ async def generate_summary(request: summaryAnalysisRequest ):
         return summaryAnalysisResponse(status="success", result=result)
     except Exception as e:
         return summaryAnalysisResponse(status="error", result="", error=str(e))
-
-
-# @app.post("/rfp/analyze", response_model=AnalysisResponse)
-# async def analyze_rfp(request: RFPAnalysisRequest):
-#     try:
-#         result = gemini.analyze_rfp(request.rfp_text)
-#         return AnalysisResponse(status="success", result=result)
-#     except Exception as e:
-#         return AnalysisResponse(status="error", result="", error=str(e))
-
-
-# @app.post("/rfp/eligibility", response_model=AnalysisResponse)
-# async def check_eligibility(request: RFPAnalysisRequest):
-#     try:
-#         if not request.company_profile:
-#             raise HTTPException(status_code=400, detail="Company profile required")
-#         result = gemini.analyze_eligibility(request.rfp_text, request.company_profile)
-#         return AnalysisResponse(status="success", result=result)
-#     except Exception as e:
-#         return AnalysisResponse(status="error", result="", error=str(e))
-
-
-# @app.post("/rfp/generate-proposal", response_model=AnalysisResponse)
-# async def generate_proposal(request: RFPAnalysisRequest):
-#     try:
-#         if not request.company_profile:
-#             raise HTTPException(status_code=400, detail="Company profile required")
-#         result = gemini.generate_project_proposal(request.rfp_text, request.company_profile)
-#         return AnalysisResponse(status="success", result=result)
-#     except Exception as e:
-#         return AnalysisResponse(status="error", result="", error=str(e))
-
 
 
 @app.post("/upload/create/rfp")

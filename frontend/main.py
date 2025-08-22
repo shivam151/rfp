@@ -18,7 +18,7 @@ from fpdf import FPDF
 load_dotenv()
 
 
-BACKEND_URL="http://0.0.0.0.8501"
+BACKEND_URL="http://0.0.0.0:8501"
 
 def upload_and_extract_text(file):
     """Send file to FastAPI backend for extraction"""

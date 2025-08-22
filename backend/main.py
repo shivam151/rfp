@@ -40,6 +40,34 @@ async def process_uploaded_file_Proposal(uploaded_file: UploadFile):
 
     return None
 
+async def coast_Proposal_file(uploaded_file: UploadFile):
+    """Process uploaded file and extract text using Gemini"""
+    if uploaded_file is not None:
+        file_type = uploaded_file.content_type
+        file_name = uploaded_file.filename
+
+        try:
+            if file_type == "text/plain":
+                content = (await uploaded_file.read()).decode("utf-8")
+                return content
+
+            elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                content = await gemini.extract_text_from_docx_coast_proposal(uploaded_file)
+                return content if content else None
+
+            elif file_type == "application/pdf":
+                content = await gemini.extract_text_coast_proposal(uploaded_file)
+                return content if content else None
+
+            else:
+                return None
+
+        except Exception as e:
+            raise Exception(f"Error processing file {file_name}: {str(e)}")
+
+    return None
+
+
 async def process_uploaded_file(uploaded_file: UploadFile):
     """Process uploaded file and extract text using Gemini"""
     if uploaded_file is not None:
@@ -81,8 +109,10 @@ class RFPAnalysisRequest(BaseModel):
 
 class analyzePricingRequest(BaseModel):
     proposal_text:str
-    ai_analysis_details: str
-    historical_data:Optional[str] = None
+    ai_analysis_details:str
+    costing_file_text : Optional[str] = None
+    manual_costing_text : Optional[str] = None
+    
 
 class AnalysisResponse(BaseModel):
     status: str
@@ -202,13 +232,37 @@ async def analyze_proposal_components(request: AnalysisRequest):
         return AnalysisResponse(status="success", analyze_proposal=analyze_proposal_result)
     except Exception as e:
         return AnalysisResponse(status="error", analyze_proposal_result="", error=str(e))
+    
+    
+
+@app.post("/coast/proposal")
+async def upload_proposal_file(file: UploadFile = File(...)):
+    """Upload and extract text from proposal file"""
+    try:
+        text = await coast_Proposal_file(file)
+
+        if text is None:
+            raise HTTPException(status_code=400, detail="Failed to process the file")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "filename": file.filename,
+                "content_type": file.content_type,
+                "text": text,
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.post("/analyze/pricing", response_model=analyzePricingResponse)
 async def analyze_pricing_api(request: analyzePricingRequest):
     try:
     
-        result = await gemini.analyze_pricing(request.proposal_text, request.ai_analysis_details)
+        result = await gemini.analyze_pricing(request.proposal_text, request.costing_file_text, request.manual_costing_text)
         return analyzePricingResponse(status="success", result=result)
     except Exception as e:
         return analyzePricingResponse(status="error", result="", error=str(e))

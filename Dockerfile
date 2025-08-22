@@ -22,7 +22,11 @@ COPY ./backend ./backend
 COPY ./frontend ./frontend
 
 # Expose ports
+<<<<<<< HEAD
 EXPOSE 8501 8000
+=======
+EXPOSE 8000 8501
+>>>>>>> 507126b8c6b95a5a61fa6e4ebc174b3b9436e3fd
 
 # Create a startup script
 RUN echo '#!/bin/sh' > start.sh && \

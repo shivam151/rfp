@@ -17,10 +17,8 @@ from fpdf import FPDF
 
 load_dotenv()
 
-if not os.getenv("BACKEND_URL"):
-    st.error("BACKEND_URL  not found. Please set it in your .env file.")
-    st.stop()
-BACKEND_URL="http://localhost:8000"
+
+BACKEND_URL="http://0.0.0.0.8501"
 
 def upload_and_extract_text(file):
     """Send file to FastAPI backend for extraction"""

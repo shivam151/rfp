@@ -22,16 +22,12 @@ COPY ./backend ./backend
 COPY ./frontend ./frontend
 
 # Expose ports
-<<<<<<< HEAD
-EXPOSE 8501 8000
-=======
 EXPOSE 8000 8501
->>>>>>> 507126b8c6b95a5a61fa6e4ebc174b3b9436e3fd
 
 # Create a startup script
 RUN echo '#!/bin/sh' > start.sh && \
-    echo 'cd /app/frontend && streamlit run main.py --server.port=8501 --server.address=0.0.0.0 &' >> start.sh && \
-    echo 'cd /app/backend && uvicorn main:app --host 0.0.0.0 --port 8000' >> start.sh && \
+    echo 'cd /app && uvicorn backend.main:app --host 0.0.0.0 --port 8501 &' >> start.sh && \
+    echo 'cd /app/frontend && streamlit run main.py --server.port=8000 --server.address=0.0.0.0' >> start.sh && \
     chmod +x start.sh
 
 # Run both services
